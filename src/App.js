@@ -1,23 +1,26 @@
 import React from 'react';
 import './App.css';
-import { 
+import {
+  Drawer,
   Button, 
   Input, 
   Tabs, 
   Divider, 
   Typography,
-  Alert
+  Alert,
+  Spin
 } from 'antd'
 
 import qs from './utils/qs'
 import copy from 'copy-to-clipboard'
 import importCode from './utils/code'
+import ReactJson from 'react-json-view'
 
 const { Title, Paragraph } = Typography
 const { TabPane } = Tabs
 const InputGroup = Input.Group
 const desc = "用`react`写的一个用来生成`api`查询字段的一个工具"
-const wrapStyle = { 
+const wrapStyle = {
   maxWidth: '450px',
   margin: '0 auto',
   padding: '20px',
@@ -33,15 +36,23 @@ class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      baseUrl: 'https://baidu.com', // 基础 `url`
+      baseUrl: 'http://www.json-generator.com/api/json/get/cgzoRmsxGq?indent=2', // 基础 `url`
       qs: [
         {
-          key: 'query',
-          value: 'value'
+          key: 'indent',
+          value: 2
         }
       ], // 查询字段
       FullURL: '',// 完整`url`
-      isCloseMsg: true
+      isCloseMsg: true,
+      visible: false,
+      DrawerPos: `right`,
+      jsonData: {
+        code: '200',
+        msg: '快夸夸我可爱呀, 我超甜的呢'
+      },
+      codes: [],
+      isGetAJAX: false
     }
   }
 
@@ -108,8 +119,53 @@ class App extends React.Component {
     }
   }
 
-  createCode() {
-    
+  createCode = ()=> {
+    const url = this.state.FullURL
+    const data = this.state.qs
+    const Res = importCode.set({url, data})
+    this.setState({
+      codes: Res
+    })
+  }
+
+  initCode = ()=> {
+    const DocCode = importCode.get()
+    DocCode.map(item=> {
+      item.code = item.create()
+      return item
+    })
+    this.setState({
+      codes: DocCode
+    })
+  }
+
+  DrawerFetch = ()=> {
+    const url = this.state.baseUrl
+    let isJSON = false
+    this.setState({ isGetAJAX: true })
+    fetch(url).then(r=> {
+      this.setState({
+        isGetAJAX: false
+      })
+      let result
+      try {
+        result = r.json()
+        isJSON = true
+      } catch(err) {
+        result = r.text()
+      }
+      return result
+    }).then(r=> {
+      this.setState({
+        jsonData: r
+      })
+    }).catch(err=> {
+      throw new Error('error: ', err)
+    })
+  }
+
+  componentDidMount = ()=> {
+    this.initCode()
   }
 
   render() {
@@ -125,15 +181,9 @@ class App extends React.Component {
         </div>
       )
     }
-
-    const DocCode = importCode.get()
-    DocCode.map(item=> {
-      item.code = item.create()
-      return item
-    })
     codeShif = (
       <Tabs defaultActiveKey="1" onChange={ this.checkChange }>
-        { DocCode.map((item,index)=> {
+        { this.state.codes.map((item,index)=> {
           return (
             <TabPane tab={ item.tab } key={ index+1 }>
               <pre>{ item.code }</pre>
@@ -145,6 +195,24 @@ class App extends React.Component {
 
     return (
       <div style={ wrapStyle }>
+        <Drawer placement={ this.state.DrawerPos } visible={ this.state.visible } title="发送请求" width={ 420 }>
+          <Button onClick={ this.DrawerFetch } type="primary">发送请求🍓</Button>
+          <Button type={ this.state.DrawerPos == 'right' ? '' : 'danger' } style={{ marginLeft: '12px' }} onClick={ e=> {
+            let l = 'left', r = 'right'
+            let DrawerPos = this.state.DrawerPos
+            DrawerPos = DrawerPos == l ? r : l
+            this.setState({ DrawerPos })
+           }}>反向🍎</Button>
+          <Spin spinning={ this.state.isGetAJAX } tips="加载中, 等等鸭~"></Spin>
+          <Tabs defaultActiveKey="2" onChange={ this.checkChange }>
+            <TabPane tab="源数据" key="1">
+              <Title>没有,下一位..</Title>
+            </TabPane>
+            <TabPane tab="格式化" key="2">
+              <ReactJson src={ this.state.jsonData } />
+            </TabPane>
+          </Tabs>
+        </Drawer>
         <Title level={2}># querystring</Title>
         <Paragraph>{ desc }</Paragraph>
         <div>

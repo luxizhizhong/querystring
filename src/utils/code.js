@@ -21,6 +21,8 @@ const jquery = {
     // TODO: 结构错误
     let sp = ''
     for (let key in data.data) {
+      console.log(`key: `, key)
+      console.log('value: ', data.data[key])
       const value = data.data[key]
       sp += `\n${ key }: ${ value }`
     }
@@ -81,6 +83,13 @@ const codes = [ js, fetch, jquery ]
 
 const get = ()=> codes
 
-const set = (key, data)=> codes[key].craete(data)
+const set = ({url, data})=> {
+  const [ js, fetch, jqery ] = codes
+  js.code = js.create({ url })
+  fetch.code = fetch.create({ url })
+  jqery.code = jqery.create({ url, data })
+  console.log('jquery: ', jqery)
+  return [ js, fetch, jqery ]
+}
 
 export default { get, set }
