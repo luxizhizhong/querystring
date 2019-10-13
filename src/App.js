@@ -1,51 +1,60 @@
 import React from 'react';
 import './App.css';
-
 import { 
   Button, 
   Input, 
   Tabs, 
   Divider, 
-  Typography 
+  Typography,
+  Alert
 } from 'antd'
 
-const { Title, Paragraph } = Typography;
-const { TabPane } = Tabs;
-const InputGroup = Input.Group;
+import qs from './utils/qs'
+import copy from 'copy-to-clipboard'
+import importCode from './utils/code'
+
+const { Title, Paragraph } = Typography
+const { TabPane } = Tabs
+const InputGroup = Input.Group
 const desc = "用`react`写的一个用来生成`api`查询字段的一个工具"
+const wrapStyle = { 
+  maxWidth: '450px',
+  margin: '0 auto',
+  padding: '20px',
+  border: '1px solid #d9d9d9',
+  minHeight: '100vh'
+}
+const marginWrap = {
+  margin: '12px 0'
+}
 
 class App extends React.Component {
 
   constructor(props) {
     super(props);
     this.state = {
-      baseUrl: '', // 基础 `url`
+      baseUrl: 'https://baidu.com', // 基础 `url`
       qs: [
         {
-          key: 'limit',
-          value: '20'
+          key: 'query',
+          value: 'value'
         }
       ], // 查询字段
-      FullURL: '', // 完整`url`
+      FullURL: '',// 完整`url`
+      isCloseMsg: true
     }
-    // TODO: this 指向问题
-    // this.callback = this.callback.bind(this)
   }
 
-  callback = key=> {
-  }
+  checkChange = key=> {}
 
   baseOnInput = e=> {
-    let baseUrl = e.target.value
+    let baseUrl = e.target.value.trim()
     this.setState({ baseUrl })
-  }
-
-  qsInput = e=> {
-    
+    this.createFullURL()
+    this.createCode()
   }
 
   addQS= e=> {
-    console.log('state middle inter')
     const XD = [{ key: '', value: '' }]
     const list = this.state.qs
     this.setState({
@@ -53,56 +62,124 @@ class App extends React.Component {
     })
   }
 
+  qsValue = (...args)=> {
+    const [ e, index, flag ] = args
+    const value = e.target.value.trim()
+    let list = this.state.qs
+    if (flag) {
+      list[index].key = value
+    } else list[index].value = value
+    this.setState({
+      qs: list
+    })
+    this.createFullURL()
+    this.createCode()
+  }
+
+  qsDelItem = index=> {
+    let list = this.state.qs
+    list.splice(index,1)
+    this.setState({
+      qs: list
+    })
+    this.createFullURL()
+    this.createCode()
+  }
+
+  createFullURL = ()=> {
+    const url = this.state.baseUrl.trim()
+    const list = this.state.qs
+    let isHasKey = true
+    list.some(item=> {
+      if (!item.key) return !(isHasKey = false)
+    })
+    if (!url || !isHasKey) return
+    const FullURL = qs.toString({ url, list })
+    this.setState({ FullURL })
+  }
+
+  copyText = ()=> {
+    const text = this.state.FullURL
+    if (text) {
+      copy(text)
+      this.setState({
+        isCloseMsg: false
+      })
+    }
+  }
+
+  createCode() {
+    
+  }
+
   render() {
+    let copyWrap = ''
+    let codeShif = ''
+    if (this.state.FullURL) {
+      const msg = this.state.isCloseMsg ? '' : <Alert message="复制成功" type="success" showIcon closeText="知道了" />
+      copyWrap = (
+        <div>
+          <Title level={4}># 完整`url`</Title>
+          { msg }
+          <Input style={{ ...marginWrap, ...{ cursor: "pointer" } }} onClick={ this.copyText } value={ this.state.FullURL } />
+        </div>
+      )
+    }
+
+    const DocCode = importCode.get()
+    DocCode.map(item=> {
+      item.code = item.create()
+      return item
+    })
+    codeShif = (
+      <Tabs defaultActiveKey="1" onChange={ this.checkChange }>
+        { DocCode.map((item,index)=> {
+          return (
+            <TabPane tab={ item.tab } key={ index+1 }>
+              <pre>{ item.code }</pre>
+            </TabPane>
+          )
+        }) }
+      </Tabs>
+    )
+
     return (
-      <div>
+      <div style={ wrapStyle }>
         <Title level={2}># querystring</Title>
         <Paragraph>{ desc }</Paragraph>
         <div>
           <Title level={4}># 基础URL:</Title>
-          <Input onChange={ this.baseOnInput } />
+          <Input style={ marginWrap } value={ this.state.baseUrl } onChange={ this.baseOnInput } />
           <Title level={4}># 查询字段:</Title>
           <div>
           <div className="codebox">
               {this.state.qs.map((item,index)=>{
                 return (
-                <div key={ index }>
+                <div style={ marginWrap } key={ index }>
                   <InputGroup compact>
-                    <Input placeholder="key" style={{ width: '50%' }}  />
-                    <Input placeholder="value" style={{ width: '50%' }}  />
+                    <Input value={ this.state.qs[index].key } onChange={ ev=> { this.qsValue(ev, index, 1) } } placeholder="key" style={{ width: '40%' }}  />
+                    <Input value={ this.state.qs[index].value } onChange={ ev=> { this.qsValue(ev, index, 0) } } placeholder="value" style={{ width: '40%' }}  />
+                    <Button onClick={ this.qsDelItem.bind(this, index) } type="danger" style={{ width: '20%' }}>删除</Button>
                   </InputGroup>
                 </div>
                 )
               })}
-            <Button onClick={ this.addQS } type="primary"> 增加 </Button>
+            <Button style={ marginWrap } onClick={ this.addQS } type="primary"> 增加 </Button>
           </div>
         </div>
         </div>
-        <div>
-          <Title level={4}># 完整`url`</Title>
-          <Input />
-        </div>
+        { copyWrap }
         <div>
           <Title level={4}># 测试接口(`CORS`) </Title>
           <div>
-            <Button type="primary"> 发送请求 </Button>
+            <Button style={ marginWrap } type="primary"> 发送请求 </Button>
           </div>
         </div>
         <div>
           <Title level={4}># 生成代码 </Title>
-          <Tabs defaultActiveKey="1" onChange={ this.callback}>
-            <TabPane tab="Jquery" key="1">
-              Content of Tab Pane 1
-            </TabPane>
-            <TabPane tab="fetch" key="2">
-              Content of Tab Pane 2
-            </TabPane>
-            <TabPane tab="js原生" key="3">
-              Content of Tab Pane 3
-            </TabPane>
-          </Tabs>
+          { codeShif }
           <Divider></Divider>
-          <Button type="primary"> 复制代码 </Button>
+          <Button style={ marginWrap } type="primary"> 复制代码 </Button>
         </div>
       </div>
     );
