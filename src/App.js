@@ -8,13 +8,15 @@ import {
   Divider, 
   Typography,
   Alert,
-  Spin
+  Spin,
+  message
 } from 'antd'
 
 import qs from './utils/qs'
 import copy from 'copy-to-clipboard'
 import importCode from './utils/code'
 import ReactJson from 'react-json-view'
+import { Foot } from './components/footer'
 
 const { Title, Paragraph } = Typography
 const { TabPane } = Tabs
@@ -36,27 +38,28 @@ class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      baseUrl: 'http://www.json-generator.com/api/json/get/cgzoRmsxGq?indent=2', // 基础 `url`
-      qs: [
-        {
-          key: 'indent',
-          value: 2
-        }
-      ], // 查询字段
-      FullURL: '',// 完整`url`
-      isCloseMsg: true,
+      baseUrl: '', // 基础 `url`
+      qs: [ { key: '', value: ''} ], // 查询字段
+      FullURL: '', // 完整`url`
+      isCloseMsg: true, // 复制`msg` (已废弃)
       visible: false,
-      DrawerPos: `right`,
+      DrawerPos: `right`, // 显示
       jsonData: {
         code: '200',
         msg: '快夸夸我可爱呀, 我超甜的呢'
-      },
-      codes: [],
-      isGetAJAX: false
+      }, // 返回的 `json` 数据
+      codes: [], // 代码片段
+      isGetAJAX: false, // loading
+      activeKey: 1 // code[index]
     }
   }
 
-  checkChange = key=> {}
+  checkChange = key=> {
+    key = Number.parseInt(key)
+    this.setState({
+      activeKey: key
+    })
+  }
 
   baseOnInput = e=> {
     let baseUrl = e.target.value.trim()
@@ -109,14 +112,14 @@ class App extends React.Component {
     this.setState({ FullURL })
   }
 
-  copyText = ()=> {
-    const text = this.state.FullURL
-    if (text) {
+  copyText = (flag, data)=> {
+    if (!flag) {
+      let text = this.state.FullURL
+      text = data ? data : text
       copy(text)
-      this.setState({
-        isCloseMsg: false
-      })
     }
+    // this.setState({ isCloseMsg: flag })
+    message.success('复制成功',2);
   }
 
   createCode = ()=> {
@@ -168,21 +171,18 @@ class App extends React.Component {
     this.initCode()
   }
 
+  copyCodes = ()=> {
+    const code = this.state.codes
+    let index = this.state.activeKey
+    --index
+    const current = code[index]
+    this.copyText(false, current.code)
+  }
+
   render() {
-    let copyWrap = ''
-    let codeShif = ''
-    if (this.state.FullURL) {
-      const msg = this.state.isCloseMsg ? '' : <Alert message="复制成功" type="success" showIcon closeText="知道了" />
-      copyWrap = (
-        <div>
-          <Title level={4}># 完整`url`</Title>
-          { msg }
-          <Input style={{ ...marginWrap, ...{ cursor: "pointer" } }} onClick={ this.copyText } value={ this.state.FullURL } />
-        </div>
-      )
-    }
+    let codeShif = '', copyWrap = ''
     codeShif = (
-      <Tabs defaultActiveKey="1" onChange={ this.checkChange }>
+      <Tabs defaultActiveKey="2" onChange={ this.checkChange }>
         { this.state.codes.map((item,index)=> {
           return (
             <TabPane tab={ item.tab } key={ index+1 }>
@@ -192,10 +192,23 @@ class App extends React.Component {
         }) }
       </Tabs>
     )
+    if (this.state.FullURL) {
+      copyWrap = (
+        <div>
+          <Title level={4}># 完整`url`</Title>
+          { this.state.isCloseMsg ? null : (
+            <Alert message="复制成功" type="success" showIcon closeText="知道了" afterClose={ e=> this.copyText(true) } />
+          ) }
+          <Input style={{ ...marginWrap, ...{ cursor: "pointer" } }} onClick={ e=> this.copyText(false) } value={ this.state.FullURL } />
+        </div>
+      )
+    }
 
     return (
       <div style={ wrapStyle }>
-        <Drawer placement={ this.state.DrawerPos } visible={ this.state.visible } title="发送请求" width={ 420 }>
+        <Drawer onClose={ e=> { this.setState({
+          visible: false
+        }) }} placement={ this.state.DrawerPos } visible={ this.state.visible } title="发送请求" width={ 420 }>
           <Button onClick={ this.DrawerFetch } type="primary">发送请求🍓</Button>
           <Button type={ this.state.DrawerPos == 'right' ? '' : 'danger' } style={{ marginLeft: '12px' }} onClick={ e=> {
             let l = 'left', r = 'right'
@@ -240,15 +253,20 @@ class App extends React.Component {
         <div>
           <Title level={4}># 测试接口(`CORS`) </Title>
           <div>
-            <Button style={ marginWrap } type="primary"> 发送请求 </Button>
+            <Button onClick={ e=> {
+              if (this.state.FullURL) {
+                this.setState({ visible: true }) 
+              }
+            } } style={ marginWrap } type="primary"> 发送请求 </Button>
           </div>
         </div>
         <div>
           <Title level={4}># 生成代码 </Title>
           { codeShif }
           <Divider></Divider>
-          <Button style={ marginWrap } type="primary"> 复制代码 </Button>
+          <Button onClick={ this.copyCodes } style={ marginWrap } type="primary"> 复制代码 </Button>
         </div>
+        <Foot />
       </div>
     );
   }

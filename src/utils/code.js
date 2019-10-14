@@ -14,17 +14,17 @@ const jquery = {
   create: (data = {
     url: 'https://xx.com',
     data: {
-      page: 1,
-      limit: 20
+      20: {
+        key: 'limit',
+        value: 20
+      }
     }
   })=>{
     // TODO: 结构错误
     let sp = ''
     for (let key in data.data) {
-      console.log(`key: `, key)
-      console.log('value: ', data.data[key])
-      const value = data.data[key]
-      sp += `\n${ key }: ${ value }`
+      const obj = data.data[key]
+      sp += `\n${ obj.key }: \`${ obj.value }\``
     }
     return `
   $.ajax({
@@ -48,7 +48,7 @@ const fetch = {
   create: (data = {
     url: 'https://xx.com?page=1&limit=20'
   })=> `
-  let url = ${ data.url }
+  let url = \`${ data.url }\`
   fetch(url)
     .then(r=>r.json())
     .then(r=> {
@@ -65,7 +65,7 @@ const js = {
   create: (data = {
     url: 'https://xx.com?page=1&limit=20'
   })=> `
-  let url = ${ data.url }
+  let url = \`${ data.url }\`
   let xhr = new XMLHttpRequest()
   xhr.open('GET', url, true)
   xhr.send()
@@ -88,7 +88,6 @@ const set = ({url, data})=> {
   js.code = js.create({ url })
   fetch.code = fetch.create({ url })
   jqery.code = jqery.create({ url, data })
-  console.log('jquery: ', jqery)
   return [ js, fetch, jqery ]
 }
 

@@ -7,6 +7,12 @@
 
 ![](https://i.loli.net/2019/10/13/EWALh1kBTeOMz29.png)
 
+### DEMO
+
+code online editor: [stackblitz](https://stackblitz.com/github/luxizhizhong/querystring)
+
+![](https://i.loli.net/2019/10/14/aWmn2O9esY1Vwgv.gif)
+
 ### Devloper
 
 ```console
