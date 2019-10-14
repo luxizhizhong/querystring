@@ -9,7 +9,8 @@ import {
   Typography,
   Alert,
   Spin,
-  message
+  message,
+  Modal
 } from 'antd'
 
 import qs from './utils/qs'
@@ -163,7 +164,15 @@ class App extends React.Component {
         jsonData: r
       })
     }).catch(err=> {
-      throw new Error('error: ', err)
+      this.setState({
+        isGetAJAX: false
+      })
+      Modal.error({
+        title: '跨域问题',
+        content: '关于跨域问题可以参考阮一峰老师的blog: http://www.ruanyifeng.com/blog/2016/04/cors.html',
+      });
+      console.log(err)
+      // throw new Error('error: ', err)
     })
   }
 
@@ -180,7 +189,7 @@ class App extends React.Component {
   }
 
   render() {
-    let codeShif = '', copyWrap = ''
+    let codeShif = '', copyWrap = '', textAPI = ''
     codeShif = (
       <Tabs defaultActiveKey="2" onChange={ this.checkChange }>
         { this.state.codes.map((item,index)=> {
@@ -200,6 +209,18 @@ class App extends React.Component {
             <Alert message="复制成功" type="success" showIcon closeText="知道了" afterClose={ e=> this.copyText(true) } />
           ) }
           <Input style={{ ...marginWrap, ...{ cursor: "pointer" } }} onClick={ e=> this.copyText(false) } value={ this.state.FullURL } />
+        </div>
+      )
+      textAPI = (
+        <div>
+          <Title level={4}># 测试接口(`CORS`) </Title>
+          <div>
+            <Button onClick={ e=> {
+              if (this.state.FullURL) {
+                this.setState({ visible: true }) 
+              }
+            } } style={ marginWrap } type="primary"> 发送请求 </Button>
+          </div>
         </div>
       )
     }
@@ -250,23 +271,17 @@ class App extends React.Component {
         </div>
         </div>
         { copyWrap }
-        <div>
-          <Title level={4}># 测试接口(`CORS`) </Title>
-          <div>
-            <Button onClick={ e=> {
-              if (this.state.FullURL) {
-                this.setState({ visible: true }) 
-              }
-            } } style={ marginWrap } type="primary"> 发送请求 </Button>
-          </div>
-        </div>
+        { textAPI }
+
         <div>
           <Title level={4}># 生成代码 </Title>
           { codeShif }
           <Divider></Divider>
           <Button onClick={ this.copyCodes } style={ marginWrap } type="primary"> 复制代码 </Button>
         </div>
+
         <Foot />
+
       </div>
     );
   }
